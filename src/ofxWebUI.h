@@ -14,12 +14,12 @@
 #include "ofUtils.h"
 #include "ofURLFileLoader.h"
 
-#include "ofxWebSocketServer.h"
-#include "ofxHttpServer.h"
-
+#include "ofxWebSocketHttpProtocol.h"
+#include "ofxWebSocketProtocol.h"
 #include "ui.pb.h"
 
 class ofxWebUI
+: public ofxWebSocketProtocol
 {
 public:
   ofxWebUI();
@@ -30,21 +30,20 @@ public:
 
   void urlResponse(ofHttpResponse& response);
 
-  ofxWebSocketServer& websocket_server;
-  ofxHttpServer& http_server;
-
   protobuf::ui* pb;
   
   ofImage QRcode;
 
+protected:
+  void onopen(ofxWebSocketEventArgs& args);
+  void onclose(ofxWebSocketEventArgs& args);
+  void onmessage(ofxWebSocketEventArgs& args);
+
+  ofxWebSocketHttpProtocol httpServer;
+
 private:
   std::string url;
   std::string pbSerialized;
-
-  void onopen(ofxWebSocketServer::WebSocketEventArgs& args);
-  void onclose(ofxWebSocketServer::WebSocketEventArgs& args);
-  void onmessage(ofxWebSocketServer::WebSocketEventArgs& args);
-
 };
 
 static std::string urlencode(const std::string& url);

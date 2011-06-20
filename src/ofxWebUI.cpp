@@ -9,62 +9,76 @@
  */
 
 #include "ofxWebUI.h"
+#include "Poco/Net/DNS.h"
+#include "ofxWebSocketReactor.h"
 
 //--------------------------------------------------------------
 ofxWebUI::ofxWebUI()
-: http_server(_http_server)
-, websocket_server(_websocket_server)
-{}
+{
+  reactor = &_websocket_reactor;
+  binary = true;
+}
 
 //--------------------------------------------------------------
-void ofxWebUI::setup(protobuf::ui& _pb)
-{
-  http_server.setup();  
-  //  websocket_server.port = "";
-  websocket_server.setup();
+void
+ofxWebUI::setup(protobuf::ui& _pb)
+{  
+  httpServer.setup();
+  reactor->registerProtocol(std::string("http"), &httpServer);
+  reactor->registerProtocol(std::string("ofx"), this);
+  
+  reactor->setup(7681, "", "");
 
   pb = &_pb;
-  ofAddListener(ofxWebSocketServer::onopen, this, &ofxWebUI::onopen);
-  ofAddListener(ofxWebSocketServer::onclose, this, &ofxWebUI::onclose);
-  ofAddListener(ofxWebSocketServer::onmessage, this, &ofxWebUI::onmessage);
-  
-  url = "http://beeswax.local:7681/index.html";
+  if (reactor != NULL)
+  {
+    std::string fqdn = Poco::Net::DNS::thisHost().name();
+    url = "http://" + fqdn + ":" + ofToString(reactor->port) + "/";
+  }
   ofRegisterURLNotification(this);
 }
 
 //--------------------------------------------------------------
-void ofxWebUI::onopen(ofxWebSocketServer::WebSocketEventArgs& args)
+void
+ofxWebUI::onopen(ofxWebSocketEventArgs& args)
 {
   if (pbSerialized.empty())
     pb->SerializeToString(&pbSerialized);
 
-  websocket_server.send(args.ws, pbSerialized);
+  reactor->send(args.ws, pbSerialized, true);
 }
 
 //--------------------------------------------------------------
-void ofxWebUI::onmessage(ofxWebSocketServer::WebSocketEventArgs& args)
+void
+ofxWebUI::onmessage(ofxWebSocketEventArgs& args)
 {
   protobuf::ui pb_diff;
-  pb_diff.ParseFromString(args.message);
-  pb->MergeFrom(pb_diff);
 
-  std::string _pbSerialized;
-  pb->SerializeToString(&_pbSerialized);
-
-  if (_pbSerialized != pbSerialized)
+  if (pb_diff.ParseFromString(args.message))
   {
-    pbSerialized = _pbSerialized;
-    websocket_server.broadcast(args.message);
+    pb->MergeFrom(pb_diff);
+
+    std::string _pbSerialized;
+    pb->SerializeToString(&_pbSerialized);
+
+    if (_pbSerialized != pbSerialized)
+    {
+      pbSerialized = _pbSerialized;
+      reactor->broadcast(args.message, idx);
+    }
   }
 }
 
 //--------------------------------------------------------------
-void ofxWebUI::onclose(ofxWebSocketServer::WebSocketEventArgs& args)
-{  
+void
+ofxWebUI::onclose(ofxWebSocketEventArgs& args)
+{
+  std::cout << "Connection closed" << std::endl;
 }
 
 //--------------------------------------------------------------
-void ofxWebUI::fetchQRcode()
+void
+ofxWebUI::fetchQRcode()
 {
   std::stringstream googleChartsQRurl;
   googleChartsQRurl
@@ -80,13 +94,15 @@ void ofxWebUI::fetchQRcode()
 }
 
 //--------------------------------------------------------------
-void ofxWebUI::launchBrowser()
+void
+ofxWebUI::launchBrowser()
 {
   ofLaunchBrowser(url);
 }
 
 //--------------------------------------------------------------
-void ofxWebUI::urlResponse(ofHttpResponse& response)
+void
+ofxWebUI::urlResponse(ofHttpResponse& response)
 {
   if(response.status == 200 && response.request.name == "qrcode")
     QRcode.loadImage(response.data);
@@ -98,7 +114,8 @@ void ofxWebUI::urlResponse(ofHttpResponse& response)
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
-std::string urlencode(const std::string& url)
+std::string
+urlencode(const std::string& url)
 {
   std::stringstream ss;
   static std::string okchars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-~";
