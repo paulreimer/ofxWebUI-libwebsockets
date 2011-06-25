@@ -13,11 +13,14 @@
 #include "ofThread.h"
 #include "ofEvents.h"
 
-#include "ofxWebSocketProtocol.h"
-
 extern "C" {
 #include <libwebsockets.h>
 }
+
+class ofxWebSocketConnection;
+class ofxWebSocketProtocol;
+
+class ofxWebSocketReactor;
 
 class ofxWebSocketReactor
 : public ofThread
@@ -27,58 +30,54 @@ public:
   ofxWebSocketReactor();
   ~ofxWebSocketReactor();
 
+  static ofxWebSocketReactor& instance();
+  static ofxWebSocketReactor* _instance;  
+
   void setup(const short _port=7681,
              const std::string sslCertFilename="libwebsockets-test-server.pem",
              const std::string sslKeyFilename="libwebsockets-test-server.key.pem");
 
   void exit();
 
-  void registerProtocol(const std::string name, ofxWebSocketProtocol* protocol);
+  void registerProtocol(const std::string& name,
+                        ofxWebSocketProtocol& protocol);
 
-  unsigned int _notify(unsigned int protocol_idx,
-                       enum libwebsocket_callback_reasons reason,
-                       libwebsocket* const ws,
-                       void* const session,
-                       const char* const message,
-                       const unsigned int len) const;
+  void close(ofxWebSocketConnection* const conn);
 
-  void send(libwebsocket* const ws,
-            const std::string& message,
-            bool binary=false);
-  void send(libwebsocket* const ws,
-            const char* const message,
-            unsigned int len,
-            bool binary=false);
+  ofxWebSocketProtocol* const protocol(const unsigned int idx);
 
 	short port;
 
-  void broadcast(const std::string& message,
-                 unsigned int protocol_idx);
-  void broadcast(const char* const message,
-                 unsigned int len,
-                 unsigned int protocol_idx);
-  
-  void close(libwebsocket* const ws) const;
-  
+//private:
+  unsigned int _allow(ofxWebSocketProtocol* const protocol, const long fd);
+
+  unsigned int _notify(ofxWebSocketConnection* const conn,
+                       enum libwebsocket_callback_reasons const reason,
+                       const char* const _message,
+                       const unsigned int len);
+
+  unsigned int _http(struct libwebsocket *ws,
+                     const char* const url);
+
+  std::string document_root;
+
+  std::vector<std::pair<std::string, ofxWebSocketProtocol*> > protocols;
+
 protected:
   unsigned int waitMillis;
   std::string interface;
-  std::vector<ofxWebSocketProtocol*> protocols;
 
 private:
   void threadedFunction();  
   
-  std::vector<unsigned char> buf;
-  std::vector<struct libwebsocket_protocols> _protocols;
+  std::vector<struct libwebsocket_protocols> lws_protocols;
 	struct libwebsocket_context *context;  
 };
-
-static ofxWebSocketReactor _websocket_reactor;
 
 extern "C"
 int
 lws_callback(struct libwebsocket_context *context,
              struct libwebsocket *ws,
              enum libwebsocket_callback_reasons reason,
-             void *session,
+             void *user,
              void *_message, size_t len);

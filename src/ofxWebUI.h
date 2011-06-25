@@ -14,7 +14,6 @@
 #include "ofUtils.h"
 #include "ofURLFileLoader.h"
 
-#include "ofxWebSocketHttpProtocol.h"
 #include "ofxWebSocketProtocol.h"
 #include "ui.pb.h"
 
@@ -35,11 +34,9 @@ public:
   ofImage QRcode;
 
 protected:
-  void onopen(ofxWebSocketEventArgs& args);
-  void onclose(ofxWebSocketEventArgs& args);
-  void onmessage(ofxWebSocketEventArgs& args);
-
-  ofxWebSocketHttpProtocol httpServer;
+  void onopen(ofxWebSocketEvent& args);
+  void onclose(ofxWebSocketEvent& args);
+  void onmessage(ofxWebSocketEvent& args);
 
 private:
   std::string url;

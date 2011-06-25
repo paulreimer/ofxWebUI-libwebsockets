@@ -9,13 +9,12 @@
  */
 
 #include "ofxWebUI.h"
-#include "Poco/Net/DNS.h"
 #include "ofxWebSocketReactor.h"
+#include "Poco/Net/DNS.h"
 
 //--------------------------------------------------------------
 ofxWebUI::ofxWebUI()
 {
-  reactor = &_websocket_reactor;
   binary = true;
 }
 
@@ -23,34 +22,30 @@ ofxWebUI::ofxWebUI()
 void
 ofxWebUI::setup(protobuf::ui& _pb)
 {  
-  httpServer.setup();
-  reactor->registerProtocol(std::string("http"), &httpServer);
-  reactor->registerProtocol(std::string("ofx"), this);
-  
-  reactor->setup(7681, "", "");
-
   pb = &_pb;
+  
   if (reactor != NULL)
   {
     std::string fqdn = Poco::Net::DNS::thisHost().name();
     url = "http://" + fqdn + ":" + ofToString(reactor->port) + "/";
   }
+
   ofRegisterURLNotification(this);
 }
 
 //--------------------------------------------------------------
 void
-ofxWebUI::onopen(ofxWebSocketEventArgs& args)
+ofxWebUI::onopen(ofxWebSocketEvent& args)
 {
   if (pbSerialized.empty())
     pb->SerializeToString(&pbSerialized);
 
-  reactor->send(args.ws, pbSerialized, true);
+  args.conn.send(pbSerialized);
 }
 
 //--------------------------------------------------------------
 void
-ofxWebUI::onmessage(ofxWebSocketEventArgs& args)
+ofxWebUI::onmessage(ofxWebSocketEvent& args)
 {
   protobuf::ui pb_diff;
 
@@ -64,14 +59,15 @@ ofxWebUI::onmessage(ofxWebSocketEventArgs& args)
     if (_pbSerialized != pbSerialized)
     {
       pbSerialized = _pbSerialized;
-      reactor->broadcast(args.message, idx);
+      broadcast(args.message);
     }
   }
+  std::cout << pb_diff.DebugString() << std::endl;
 }
 
 //--------------------------------------------------------------
 void
-ofxWebUI::onclose(ofxWebSocketEventArgs& args)
+ofxWebUI::onclose(ofxWebSocketEvent& args)
 {
   std::cout << "Connection closed" << std::endl;
 }
