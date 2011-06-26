@@ -41,7 +41,8 @@ protected:
   virtual void onclose    (ofxWebSocketEvent& args) {}
   virtual void onidle     (ofxWebSocketEvent& args) {}
   virtual void onmessage  (ofxWebSocketEvent& args) {}
-  virtual void onbroadcast(ofxWebSocketEvent& args) {}
+  virtual void onbroadcast(ofxWebSocketEvent& args)
+  { args.conn.send(args.message); }
 
   ofEvent<ofxWebSocketEvent> onconnectEvent;
   ofEvent<ofxWebSocketEvent> onopenEvent;
