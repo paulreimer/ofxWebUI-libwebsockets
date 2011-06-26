@@ -43,7 +43,7 @@ void
 ofxWebSocketReactor::registerProtocol(const std::string& name,
                                       ofxWebSocketProtocol& protocol)
 {
-  protocol.idx = protocols.size();
+  protocol.idx = protocols.size()+1; // "http" is protocol 0
   protocol.reactor = this;
   protocols.push_back(make_pair(name, &protocol));
 }
