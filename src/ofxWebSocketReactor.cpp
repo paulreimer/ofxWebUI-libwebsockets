@@ -258,7 +258,10 @@ lws_callback(struct libwebsocket_context* context,
         return 0;
 
       case LWS_CALLBACK_FILTER_NETWORK_CONNECTION:
-        return 0;//TODO: reactor->_allow(protocol, (int)(long)user)? 0 : 1;
+        if (protocol != NULL)
+          return reactor->_allow(protocol, (int)(long)user)? 0 : 1;
+        else
+          return 0;
 
       case LWS_CALLBACK_HTTP:
         return reactor->_http(ws, (char*)data);

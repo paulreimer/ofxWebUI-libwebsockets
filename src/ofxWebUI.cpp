@@ -62,7 +62,6 @@ ofxWebUI::onmessage(ofxWebSocketEvent& args)
       broadcast(args.message);
     }
   }
-  std::cout << pb_diff.DebugString() << std::endl;
 }
 
 //--------------------------------------------------------------
