@@ -12,6 +12,7 @@
 #include "decode.h"
 
 #include <sstream>
+#include <string.h>
 
 //--------------------------------------------------------------
 unsigned int b64_decode_string(const char* message,

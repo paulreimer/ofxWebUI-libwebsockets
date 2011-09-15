@@ -8,9 +8,7 @@
  * Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
  */
 
-#include "ofxWebSocketProtocol.h"
-#include "ofxWebSocketReactor.h"
-#include "ofxWebSocketConnection.h"
+#include "ofxWebSocket.h"
 
 //--------------------------------------------------------------
 ofxWebSocketProtocol::ofxWebSocketProtocol()
@@ -66,20 +64,36 @@ void
 ofxWebSocketProtocol::_onconnect(ofxWebSocketEvent& args)
 { onconnect(args); }  
 
+void
+ofxWebSocketProtocol::onconnect(ofxWebSocketEvent& args)
+{}
+
 //--------------------------------------------------------------
 void
 ofxWebSocketProtocol::_onopen(ofxWebSocketEvent& args)
 { onopen(args); }
+
+void
+ofxWebSocketProtocol::onopen(ofxWebSocketEvent&args)
+{}
 
 //--------------------------------------------------------------
 void
 ofxWebSocketProtocol::_onclose(ofxWebSocketEvent& args)
 { onclose(args); }
 
+void
+ofxWebSocketProtocol::onclose(ofxWebSocketEvent&args)
+{}
+
 //--------------------------------------------------------------
 void
 ofxWebSocketProtocol::_onidle(ofxWebSocketEvent& args)
 { onidle(args); }
+
+void
+ofxWebSocketProtocol::onidle(ofxWebSocketEvent&args)
+{}
 
 //--------------------------------------------------------------
 void
@@ -90,10 +104,18 @@ ofxWebSocketProtocol::_onmessage(ofxWebSocketEvent& args)
   onmessage(args);
 }
 
+void
+ofxWebSocketProtocol::onmessage(ofxWebSocketEvent&args)
+{}
+
 //--------------------------------------------------------------
 void
 ofxWebSocketProtocol::_onbroadcast(ofxWebSocketEvent& args)
 { onbroadcast(args); }
+
+void
+ofxWebSocketProtocol::onbroadcast(ofxWebSocketEvent&args)
+{ args.conn.send(args.message); }
 
 //--------------------------------------------------------------
 void

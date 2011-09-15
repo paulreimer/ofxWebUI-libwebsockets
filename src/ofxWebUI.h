@@ -14,7 +14,7 @@
 #include "ofUtils.h"
 #include "ofURLFileLoader.h"
 
-#include "ofxWebSocketProtocol.h"
+#include "ofxWebSocket.h"
 #include "ui.pb.h"
 
 class ofxWebUI
@@ -43,4 +43,4 @@ private:
   std::string pbSerialized;
 };
 
-static std::string urlencode(const std::string& url);
+static const std::string urlencode(const std::string& url);

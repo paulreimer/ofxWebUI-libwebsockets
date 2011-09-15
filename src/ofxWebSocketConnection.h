@@ -48,14 +48,3 @@ protected:
   std::vector<unsigned char> buf;
 };
 
-class ofxWebSocketEvent {
-public:
-  ofxWebSocketEvent(ofxWebSocketConnection& _conn,
-                    std::string& _message)
-  : conn(_conn)
-  , message(_message)
-  {}
-
-  ofxWebSocketConnection& conn;
-  std::string& message;
-};

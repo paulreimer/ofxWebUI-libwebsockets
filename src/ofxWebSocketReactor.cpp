@@ -8,9 +8,7 @@
  * Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
  */
 
-#include "ofxWebSocketReactor.h"
-#include "ofxWebSocketConnection.h"
-#include "ofxWebSocketProtocol.h"
+#include "ofxWebSocket.h"
 
 #include "ofEvents.h"
 #include "ofUtils.h"
@@ -95,7 +93,7 @@ ofxWebSocketReactor::setup(const short _port,
   
   if (document_root.at(0) != '/')
     document_root = ofToDataPath(document_root, true);
-             
+
   struct libwebsocket_protocols http_protocol = { "http", lws_callback, 0 };
   struct libwebsocket_protocols null_protocol = { NULL, NULL, 0 };
 

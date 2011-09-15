@@ -8,9 +8,7 @@
  * Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
  */
 
-#include "ofxWebSocketConnection.h"
-#include "ofxWebSocketProtocol.h"
-#include "ofxWebSocketReactor.h"
+#include "ofxWebSocket.h"
 #include "ofxWebSocketUtil.h"
 
 //--------------------------------------------------------------
@@ -85,3 +83,4 @@ ofxWebSocketConnection::recv(const std::string& message)
 
   return decoded;
 }
+

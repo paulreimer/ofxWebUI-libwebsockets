@@ -9,7 +9,6 @@
  */
 
 #include "ofxWebUI.h"
-#include "ofxWebSocketReactor.h"
 #include "Poco/Net/DNS.h"
 
 //--------------------------------------------------------------
@@ -109,7 +108,7 @@ ofxWebUI::urlResponse(ofHttpResponse& response)
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
-std::string
+static const std::string
 urlencode(const std::string& url)
 {
   std::stringstream ss;

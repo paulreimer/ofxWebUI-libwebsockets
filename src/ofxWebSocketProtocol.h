@@ -13,10 +13,9 @@
 #include <string>
 #include <map>
 
-#include "ofEvents.h"
+#include "ofxWebSocketEvents.h"
 
 class ofxWebSocketReactor;
-#include "ofxWebSocketConnection.h"
 
 class ofxWebSocketProtocol
 {
@@ -36,13 +35,12 @@ public:
 protected:  
   virtual void execute() {}
 
-  virtual void onconnect  (ofxWebSocketEvent& args) {}
-  virtual void onopen     (ofxWebSocketEvent& args) {}
-  virtual void onclose    (ofxWebSocketEvent& args) {}
-  virtual void onidle     (ofxWebSocketEvent& args) {}
-  virtual void onmessage  (ofxWebSocketEvent& args) {}
-  virtual void onbroadcast(ofxWebSocketEvent& args)
-  { args.conn.send(args.message); }
+  virtual void onconnect  (ofxWebSocketEvent& args);
+  virtual void onopen     (ofxWebSocketEvent& args);
+  virtual void onclose    (ofxWebSocketEvent& args);
+  virtual void onidle     (ofxWebSocketEvent& args);
+  virtual void onmessage  (ofxWebSocketEvent& args);
+  virtual void onbroadcast(ofxWebSocketEvent& args);
 
   ofEvent<ofxWebSocketEvent> onconnectEvent;
   ofEvent<ofxWebSocketEvent> onopenEvent;
