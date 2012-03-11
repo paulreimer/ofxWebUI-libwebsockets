@@ -42,12 +42,15 @@ protected:
   virtual void onmessage  (ofxWebSocketEvent& args);
   virtual void onbroadcast(ofxWebSocketEvent& args);
 
+  virtual unsigned short onhttp     (const std::string& url);  
+
   ofEvent<ofxWebSocketEvent> onconnectEvent;
   ofEvent<ofxWebSocketEvent> onopenEvent;
   ofEvent<ofxWebSocketEvent> oncloseEvent;
   ofEvent<ofxWebSocketEvent> onidleEvent;
   ofEvent<ofxWebSocketEvent> onmessageEvent;
   ofEvent<ofxWebSocketEvent> onbroadcastEvent;
+  ofEvent<ofxWebSocketEvent> onhttpEvent;
 
   bool defaultAllowPolicy;
   std::map<std::string, bool> allowRules;

@@ -16,4 +16,3 @@ ofxWebSocketEvent::ofxWebSocketEvent(ofxWebSocketConnection& _conn,
 : conn(_conn)
 , message(_message)
 {}
-

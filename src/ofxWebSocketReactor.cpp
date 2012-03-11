@@ -13,6 +13,8 @@
 #include "ofEvents.h"
 #include "ofUtils.h"
 
+#include "Poco/URI.h"
+
 ofxWebSocketReactor* ofxWebSocketReactor::_instance = NULL;
 
 //--------------------------------------------------------------
@@ -188,6 +190,8 @@ ofxWebSocketReactor::_notify(ofxWebSocketConnection* const conn,
     ofNotifyEvent(conn->protocol->onbroadcastEvent, args);
   else if (reason==LWS_CALLBACK_RECEIVE)
     ofNotifyEvent(conn->protocol->onmessageEvent, args);
+  else if (reason==LWS_CALLBACK_HTTP)
+    ofNotifyEvent(conn->protocol->onhttpEvent, args);
 
   return 0;
 }
@@ -197,7 +201,10 @@ unsigned int
 ofxWebSocketReactor::_http(struct libwebsocket *ws,
                            const char* const _url)
 {
-  std::string url(_url);
+  std::string encodedUrl(_url? _url : "");
+  std::string url;
+  Poco::URI::decode(encodedUrl, url);
+  
   if (url == "/")
     url = "/index.html";
 
@@ -213,12 +220,39 @@ ofxWebSocketReactor::_http(struct libwebsocket *ws,
     mimetype = "application/x-shockwave-flash";
   if (ext == "js")
     mimetype = "application/javascript";
+  if (ext == "png")
+    mimetype = "image/png";
 
-  if (libwebsockets_serve_http_file(ws, file.c_str(), mimetype.c_str()))
+  unsigned short responseCode = 400;
+  if (!protocols.empty())
   {
-    std::cerr
-    << "Failed to send HTTP file " << file << " for " << url
-    << std::endl;
+    ofxWebSocketProtocol* defaultProtocol = protocol(0);
+    if (defaultProtocol)
+      responseCode = defaultProtocol->onhttp(url);
+  }
+
+  if (responseCode >= 400 && ofFile::doesFileExist(file))
+  {
+    if (libwebsockets_serve_http_file(ws, file.c_str(), mimetype.c_str()))
+    {
+      std::cerr
+      << "Failed to send HTTP file " << file << " for " << url
+      << std::endl;
+    }
+  }
+  else {
+    std::stringstream responseStream;
+    responseStream
+    << "HTTP/1.0 " << responseCode  << "\x0d\x0a"
+    << "Server: libwebsockets"      << "\x0d\x0a"
+    << "Content-Length: 0"          << "\x0d\x0a"
+    << "\x0d\x0a";
+
+    libwebsocket_write(ws,
+                       (unsigned char *)responseStream.str().c_str(),
+                       responseStream.str().size(),
+                       LWS_WRITE_HTTP);
+//    libwebsocket_write(ws, NULL, 0, LWS_WRITE_CLOSE);
   }
 }
 
@@ -234,7 +268,6 @@ lws_callback(struct libwebsocket_context* context,
   int idx = lws_protocol? lws_protocol->protocol_index : 0;
 
   ofxWebSocketReactor* const reactor = ofxWebSocketReactor::_instance;
-//  ofxWebSocketProtocol* const protocol = reactor->protocols[idx-1].second;
   ofxWebSocketProtocol* const protocol = reactor->protocol(idx-1);
   ofxWebSocketConnection** const conn_ptr = (ofxWebSocketConnection**)user;
   ofxWebSocketConnection* conn;

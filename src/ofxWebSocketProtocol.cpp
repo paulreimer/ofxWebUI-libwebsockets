@@ -132,3 +132,9 @@ ofxWebSocketProtocol::broadcast(const std::string& message)
       fprintf(stderr, "ERROR writing to socket");
   }
 }
+
+unsigned short
+ofxWebSocketProtocol::onhttp(const std::string& url)
+{
+  return 400;
+}
