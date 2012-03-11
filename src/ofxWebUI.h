@@ -18,6 +18,7 @@
 #include "ui.pb.h"
 
 #include "Poco/Net/DNS.h"
+#include "Poco/Net/SocketAddress.h"
 
 template <class T>
 class ofxWebUI
@@ -25,9 +26,11 @@ class ofxWebUI
 {
 public:
   ofxWebUI()
+  : lastChangedTimestamp(0)
   {
     binary = true;
   }
+
   void setup(T& _pb)
   {  
     pb = &_pb;
@@ -46,17 +49,17 @@ public:
     ofLaunchBrowser(url);
   }
 
-  void fetchQRcode()
+  void fetchQRcode(unsigned int size=320)
   {
     std::stringstream googleChartsQRurl;
     googleChartsQRurl
     << "http://chart.googleapis.com/chart?"
-    << "chs=320x320&"
+    << "chs=" << size << "x" << size << "&"
     << "cht=qr&"
     << "chld=L|1&"
     << "choe=UTF-8&"
     << "chl=" << url;
-    
+
     //  std::cout << urlencode(url) << std::endl;
     ofLoadURLAsync(googleChartsQRurl.str(), "qrcode");
   }
@@ -74,13 +77,15 @@ public:
   T* pb;
   
   ofImage QRcode;
+  unsigned long lastChangedTimestamp;
+  std::string lastChangedIpAddress;
 
 protected:
   void onopen(ofxWebSocketEvent& args)
   {
     if (pbSerialized.empty())
       pb->SerializeToString(&pbSerialized);
-    
+
     args.conn.send(pbSerialized);
   }
 
@@ -104,6 +109,22 @@ protected:
       {
         pbSerialized = _pbSerialized;
         broadcast(args.message);
+
+        lastChangedTimestamp = ofGetSystemTime();
+        
+        int fd = libwebsocket_get_socket_fd(args.conn.ws);
+
+        static char sockAddrBuffer[Poco::Net::SocketAddress::MAX_ADDRESS_LENGTH];
+        struct sockaddr* _sockAddr = reinterpret_cast<struct sockaddr*>(sockAddrBuffer);
+        poco_socklen_t sockAddrSize = sizeof(sockAddrBuffer);
+        int rc = ::getpeername(fd, _sockAddr, &sockAddrSize);
+
+        if (rc == 0)
+        {
+          Poco::Net::SocketAddress sockAddr(_sockAddr, sockAddrSize);
+          Poco::Net::IPAddress ipAddr(sockAddr.host());
+          lastChangedIpAddress = ipAddr.toString();
+        }
       }
     }
   }

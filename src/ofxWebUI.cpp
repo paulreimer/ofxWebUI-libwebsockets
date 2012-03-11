@@ -9,14 +9,19 @@
  */
 
 #include "ofxWebUI.h"
+//#include "Poco/URI.h"
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
 static const std::string
 urlencode(const std::string& url)
 {
-  std::stringstream ss;
   static std::string okchars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-~";
+//  std::string encodedUrl;
+//  Poco::URI::encode(url, okchars, encodedUrl);
+//  return encodedUrl;
+
+  std::stringstream ss;
   size_t from = 0;
   size_t to = 0;
   
