@@ -100,7 +100,6 @@ void
 ofxWebSocketProtocol::_onmessage(ofxWebSocketEvent& args)
 {
   args.message = args.conn.recv(args.message);
-  //std::cout << args.message << std::endl;
   onmessage(args);
 }
 
