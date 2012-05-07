@@ -27,6 +27,7 @@ class ofxWebUI
 public:
   ofxWebUI()
   : lastChangedTimestamp(0)
+  , pb(NULL)
   {
     binary = true;
   }
@@ -75,6 +76,7 @@ public:
   }
 
   T* pb;
+  T lastChangedDiff;
   
   ofImage QRcode;
   unsigned long lastChangedTimestamp;
@@ -100,6 +102,7 @@ protected:
     
     if (pb_diff.ParseFromString(args.message))
     {
+      lastChangedDiff = pb_diff;
       pb->MergeFrom(pb_diff);
       
       std::string _pbSerialized;
