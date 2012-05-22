@@ -38,7 +38,10 @@ public:
     
     if (reactor != NULL)
     {
-      std::string fqdn = Poco::Net::DNS::thisHost().name();
+      std::string fqdn = "127.0.0.1";
+      Poco::Net::HostEntry host = Poco::Net::DNS::thisHost();
+      fqdn = host.name();
+
       url = "http://" + fqdn + ":" + ofToString(reactor->port) + "/";
     }
     
