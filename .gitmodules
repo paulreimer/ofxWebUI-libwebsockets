@@ -1,3 +1,6 @@
 [submodule "libs"]
 	path = libs
 	url = git@github.com:paulreimer/ofxWebUI-libs.git
+[submodule "data/web"]
+	path = data/web
+	url = git@github.com:paulreimer/ofxWebUI-web.git
