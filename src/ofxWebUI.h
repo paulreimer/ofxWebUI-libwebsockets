@@ -76,6 +76,8 @@ public:
       std::cout
       << response.status << " " << response.error
       << std::endl;
+
+    ofUnregisterURLNotification(this);
   }
 
   T* pb;
