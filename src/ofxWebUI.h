@@ -10,14 +10,17 @@
 
 #pragma once
 
-#include "ofImage.h"
-#include "ofUtils.h"
-#include "ofURLFileLoader.h"
+//#include "ofUtils.h"
 
 #include "ofxWebSocket.h"
 
+#include "Poco/Timestamp.h"
+#include "Poco/URI.h"
 #include "Poco/Net/DNS.h"
 #include "Poco/Net/SocketAddress.h"
+#include "Poco/FIFOEvent.h"
+
+#include <iostream>
 
 template <class T>
 class ofxWebUI
@@ -34,57 +37,15 @@ public:
   void setup(T& _pb)
   {  
     pb = &_pb;
-    
-    if (reactor != NULL)
-    {
-      std::string fqdn = "127.0.0.1";
-      Poco::Net::HostEntry host = Poco::Net::DNS::thisHost();
-      fqdn = host.name();
-
-      url = "http://" + fqdn + ":" + ofToString(reactor->port) + "/";
-    }
-    
-    ofRegisterURLNotification(this);
-  }
-
-  void launchBrowser()
-  {
-    ofLaunchBrowser(url);
-  }
-
-  void fetchQRcode(unsigned int size=320)
-  {
-    std::stringstream googleChartsQRurl;
-    googleChartsQRurl
-    << "http://chart.googleapis.com/chart?"
-    << "chs=" << size << "x" << size << "&"
-    << "cht=qr&"
-    << "chld=L|1&"
-    << "choe=UTF-8&"
-    << "chl=" << url;
-
-    //  std::cout << urlencode(url) << std::endl;
-    ofLoadURLAsync(googleChartsQRurl.str(), "qrcode");
-  }
-
-  void urlResponse(ofHttpResponse& response)
-  {
-    if(response.status == 200 && response.request.name == "qrcode")
-      QRcode.loadImage(response.data);
-    else
-      std::cout
-      << response.status << " " << response.error
-      << std::endl;
-
-    ofUnregisterURLNotification(this);
   }
 
   T* pb;
   T lastChangedDiff;
   
-  ofImage QRcode;
   unsigned long lastChangedTimestamp;
   std::string lastChangedIpAddress;
+
+  Poco::FIFOEvent<T> onchange;
 
 protected:
   void onopen(ofxWebSocketEvent& args)
@@ -97,13 +58,12 @@ protected:
 
   void onclose(ofxWebSocketEvent& args)
   {
-    std::cout << "Connection closed" << std::endl;
   }
   
   void onmessage(ofxWebSocketEvent& args)
   {
     T pb_diff;
-    
+
     if (pb_diff.ParseFromString(args.message))
     {
       lastChangedDiff = pb_diff;
@@ -117,7 +77,8 @@ protected:
         pbSerialized = _pbSerialized;
         broadcast(args.message);
 
-        lastChangedTimestamp = ofGetSystemTime();
+        Poco::Timestamp now;
+        lastChangedTimestamp = now.epochMicroseconds() * 1000.0;
         
         int fd = libwebsocket_get_socket_fd(args.conn.ws);
 
@@ -132,13 +93,13 @@ protected:
           Poco::Net::IPAddress ipAddr(sockAddr.host());
           lastChangedIpAddress = ipAddr.toString();
         }
+
+        onchange.notify(NULL, pb_diff);
       }
     }
   }
 
 private:
-  std::string url;
   std::string pbSerialized;
 };
 
-static const std::string urlencode(const std::string& url);
