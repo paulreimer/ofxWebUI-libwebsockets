@@ -10,16 +10,20 @@
 
 #include "ofxWebSocket.h"
 
-#include "ofEvents.h"
-#include "ofUtils.h"
-
+#include "Poco/File.h"
+#include "Poco/FIFOEvent.h"
 #include "Poco/URI.h"
+#include "Poco/Path.h"
+
+#include <iostream>
+#include <sstream>
 
 ofxWebSocketReactor* ofxWebSocketReactor::_instance = NULL;
 
 //--------------------------------------------------------------
 ofxWebSocketReactor::ofxWebSocketReactor()
-: context(NULL)
+: Runnable()
+, context(NULL)
 , waitMillis(50)
 {}
 
@@ -80,21 +84,21 @@ ofxWebSocketReactor::setup(const short _port,
     if (_sslCertFilename.at(0) == '/')
       sslCertPath = _sslCertFilename;
     else
-      sslCertPath = ofToDataPath(_sslCertFilename, true);
+      sslCertPath = Poco::Path(_sslCertFilename, Poco::Path::PATH_UNIX).absolute().toString();
     _sslCertPath = sslCertPath.c_str();
 
     if (_sslKeyFilename.at(0) == '/')
       sslKeyPath = _sslKeyFilename;
     else
-      sslKeyPath = ofToDataPath(_sslKeyFilename, true);
+      sslKeyPath = Poco::Path(_sslKeyFilename, Poco::Path::PATH_UNIX).absolute().toString();
     _sslKeyPath = sslKeyPath.c_str();
-  }  
+  }
   
   if (document_root.empty())
     document_root = "web";
   
   if (document_root.at(0) != '/')
-    document_root = ofToDataPath(document_root, true);
+    document_root = Poco::Path(document_root, Poco::Path::PATH_UNIX).absolute().toString();
 
   struct libwebsocket_protocols http_protocol = { "http", lws_callback, 0 };
   struct libwebsocket_protocols null_protocol = { NULL, NULL, 0 };
@@ -114,15 +118,13 @@ ofxWebSocketReactor::setup(const short _port,
 
   int opts = 0;
   context = libwebsocket_create_context(port, interface.c_str(),
-                                        &lws_protocols[0],
+                                        lws_protocols.data(),
                                         libwebsocket_internal_extensions,
                                         _sslCertPath, _sslKeyPath,
                                         -1, -1, opts);
 
 	if (context == NULL)
     std::cerr << "libwebsocket init failed" << std::endl;
-  else
-    startThread(true, false); // blocking, non-verbose
 }
 
 //--------------------------------------------------------------
@@ -138,9 +140,9 @@ ofxWebSocketReactor::exit()
 
 //--------------------------------------------------------------
 void
-ofxWebSocketReactor::threadedFunction()
+ofxWebSocketReactor::run()
 {
-  while (isThreadRunning())
+  for (;;)
   {
     for (int i=0; i<protocols.size(); ++i)
       if (protocols[i].second != NULL)
@@ -177,21 +179,20 @@ ofxWebSocketReactor::_notify(ofxWebSocketConnection* const conn,
   if (_message != NULL && len > 0)
     message = std::string(_message, len);
 
-  ofEvent<ofxWebSocketEvent> evt;
   ofxWebSocketEvent args(*conn, message);
 
   if      (reason==LWS_CALLBACK_ESTABLISHED)
-    ofNotifyEvent(conn->protocol->onopenEvent, args);
+    conn->protocol->onopenEvent.notify(NULL, args);
   else if (reason==LWS_CALLBACK_CLOSED)
-    ofNotifyEvent(conn->protocol->oncloseEvent, args);
+    conn->protocol->oncloseEvent.notify(NULL, args);
   else if (reason==LWS_CALLBACK_SERVER_WRITEABLE)
-    ofNotifyEvent(conn->protocol->onidleEvent, args);
+    conn->protocol->onidleEvent.notify(NULL, args);
   else if (reason==LWS_CALLBACK_BROADCAST)
-    ofNotifyEvent(conn->protocol->onbroadcastEvent, args);
+    conn->protocol->onbroadcastEvent.notify(NULL, args);
   else if (reason==LWS_CALLBACK_RECEIVE)
-    ofNotifyEvent(conn->protocol->onmessageEvent, args);
+    conn->protocol->onmessageEvent.notify(NULL, args);
   else if (reason==LWS_CALLBACK_HTTP)
-    ofNotifyEvent(conn->protocol->onhttpEvent, args);
+    conn->protocol->onhttpEvent.notify(NULL, args);
 
   return 0;
 }
@@ -204,24 +205,7 @@ ofxWebSocketReactor::_http(struct libwebsocket *ws,
   std::string encodedUrl(_url? _url : "");
   std::string url;
   Poco::URI::decode(encodedUrl, url);
-  
-  if (url == "/")
-    url = "/index.html";
-
-  std::string ext = url.substr(url.find_last_of(".")+1);
-  std::string file = document_root+url;
-  std::string mimetype = "text/html";
-
-  if (ext == "ico")
-    mimetype = "image/x-icon";
-  if (ext == "manifest")
-    mimetype = "text/cache-manifest";
-  if (ext == "swf")
-    mimetype = "application/x-shockwave-flash";
-  if (ext == "js")
-    mimetype = "application/javascript";
-  if (ext == "png")
-    mimetype = "image/png";
+  std::stringstream responseStream;
 
   unsigned short responseCode = 400;
   if (!protocols.empty())
@@ -230,30 +214,65 @@ ofxWebSocketReactor::_http(struct libwebsocket *ws,
     if (defaultProtocol)
       responseCode = defaultProtocol->onhttp(url);
   }
+  
+  if (url == "/")
+    url = "/index.html";
 
-  if (responseCode >= 400 && ofFile::doesFileExist(file))
+  url.erase(0, 1);
+/*
+  if (url == "/index.html")
   {
-    if (libwebsockets_serve_http_file(ws, file.c_str(), mimetype.c_str()))
+    std::string cdnIndexUrl = "http://cdn.p-rimes.net/ofxWebUI/index.html";
+    responseStream
+    << "HTTP/1.1 307 Temporary Redirect"  << "\x0d\x0a"
+    << "Location: " << cdnIndexUrl        << "\x0d\x0a"
+    << "Server: libwebsockets"            << "\x0d\x0a"
+    << "Content-Length: 0"                << "\x0d\x0a"
+    << "\x0d\x0a";
+  }
+  else
+*/
+  {
+    Poco::Path root("web");
+    std::string ext = url.substr(url.find_last_of(".")+1);
+    std::string file = Poco::Path(root, url).toString();
+    std::string mimetype = "text/html; charset=utf-8";
+
+    if (ext == "ico")
+      mimetype = "image/x-icon";
+    if (ext == "manifest")
+      mimetype = "text/cache-manifest";
+    if (ext == "swf")
+      mimetype = "application/x-shockwave-flash";
+    if (ext == "js")
+      mimetype = "application/javascript";
+    if (ext == "png")
+      mimetype = "image/png";
+
+    if (responseCode >= 400 && Poco::File(Poco::Path(file)).exists())
     {
-      std::cerr
-      << "Failed to send HTTP file " << file << " for " << url
-      << std::endl;
+      if (!libwebsockets_serve_http_file(ws, file.c_str(), mimetype.c_str()))
+        return 0;
+      else {
+        std::cerr
+        << "Failed to send HTTP file " << file << " for " << url
+        << std::endl;
+      }
+    }
+    else {
+      std::stringstream responseStream;
+      responseStream
+      << "HTTP/1.0 " << responseCode  << "\x0d\x0a"
+      << "Server: libwebsockets"      << "\x0d\x0a"
+      << "Content-Length: 0"          << "\x0d\x0a"
+      << "\x0d\x0a";
     }
   }
-  else {
-    std::stringstream responseStream;
-    responseStream
-    << "HTTP/1.0 " << responseCode  << "\x0d\x0a"
-    << "Server: libwebsockets"      << "\x0d\x0a"
-    << "Content-Length: 0"          << "\x0d\x0a"
-    << "\x0d\x0a";
 
-    libwebsocket_write(ws,
-                       (unsigned char *)responseStream.str().c_str(),
-                       responseStream.str().size(),
-                       LWS_WRITE_HTTP);
-//    libwebsocket_write(ws, NULL, 0, LWS_WRITE_CLOSE);
-  }
+  return libwebsocket_write(ws,
+                            (unsigned char *)responseStream.str().c_str(),
+                            responseStream.str().size(),
+                            LWS_WRITE_HTTP);
 }
 
 extern "C"
@@ -274,9 +293,10 @@ lws_callback(struct libwebsocket_context* context,
 
   if (reactor != NULL)
   {
-    
     if (reason == LWS_CALLBACK_ESTABLISHED)
-      *conn_ptr = new ofxWebSocketConnection(reactor, protocol);
+    {
+      *conn_ptr = new ofxWebSocketConnection(reactor, protocol, false); //supportsBinary
+    }
     else if (reason == LWS_CALLBACK_CLOSED)
       if (*conn_ptr != NULL)
         delete *conn_ptr;

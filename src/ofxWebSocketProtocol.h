@@ -13,6 +13,7 @@
 #include <string>
 #include <map>
 
+#include "Poco/FIFOEvent.h"
 #include "ofxWebSocketEvents.h"
 
 class ofxWebSocketReactor;
@@ -44,13 +45,13 @@ protected:
 
   virtual unsigned short onhttp     (const std::string& url);  
 
-  ofEvent<ofxWebSocketEvent> onconnectEvent;
-  ofEvent<ofxWebSocketEvent> onopenEvent;
-  ofEvent<ofxWebSocketEvent> oncloseEvent;
-  ofEvent<ofxWebSocketEvent> onidleEvent;
-  ofEvent<ofxWebSocketEvent> onmessageEvent;
-  ofEvent<ofxWebSocketEvent> onbroadcastEvent;
-  ofEvent<ofxWebSocketEvent> onhttpEvent;
+  Poco::FIFOEvent<ofxWebSocketEvent> onconnectEvent;
+  Poco::FIFOEvent<ofxWebSocketEvent> onopenEvent;
+  Poco::FIFOEvent<ofxWebSocketEvent> oncloseEvent;
+  Poco::FIFOEvent<ofxWebSocketEvent> onidleEvent;
+  Poco::FIFOEvent<ofxWebSocketEvent> onmessageEvent;
+  Poco::FIFOEvent<ofxWebSocketEvent> onbroadcastEvent;
+  Poco::FIFOEvent<ofxWebSocketEvent> onhttpEvent;
 
   bool defaultAllowPolicy;
   std::map<std::string, bool> allowRules;

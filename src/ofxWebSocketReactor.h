@@ -10,11 +10,11 @@
 
 #pragma once
 
-#include "ofThread.h"
-#include "ofEvents.h"
+#include <Poco/Runnable.h>
+#include <vector>
 
 extern "C" {
-#include <libwebsockets.h>
+#include "libwebsockets.h"
 }
 
 class ofxWebSocketConnection;
@@ -23,7 +23,7 @@ class ofxWebSocketProtocol;
 class ofxWebSocketReactor;
 
 class ofxWebSocketReactor
-: public ofThread
+: public Poco::Runnable
 {
   friend class ofxWebSocketProtocol;
 public:
@@ -68,7 +68,7 @@ protected:
   std::string interface;
 
 private:
-  void threadedFunction();  
+  void run();  
   
   std::vector<struct libwebsocket_protocols> lws_protocols;
 	struct libwebsocket_context *context;  

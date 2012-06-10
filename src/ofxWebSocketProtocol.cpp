@@ -10,27 +10,29 @@
 
 #include "ofxWebSocket.h"
 
+#include "Poco/Delegate.h"
+
 //--------------------------------------------------------------
 ofxWebSocketProtocol::ofxWebSocketProtocol()
 : defaultAllowPolicy(true)
 {
-  ofAddListener(onconnectEvent,      this, &ofxWebSocketProtocol::_onconnect);
-  ofAddListener(onopenEvent,         this, &ofxWebSocketProtocol::_onopen);
-  ofAddListener(oncloseEvent,        this, &ofxWebSocketProtocol::_onclose);
-  ofAddListener(onidleEvent,         this, &ofxWebSocketProtocol::_onidle);
-  ofAddListener(onmessageEvent,      this, &ofxWebSocketProtocol::_onmessage);
-  ofAddListener(onbroadcastEvent,    this, &ofxWebSocketProtocol::_onbroadcast);
+  onconnectEvent   += Poco::delegate(this, &ofxWebSocketProtocol::_onconnect);
+  onopenEvent      += Poco::delegate(this, &ofxWebSocketProtocol::_onopen);
+  oncloseEvent     += Poco::delegate(this, &ofxWebSocketProtocol::_onclose);
+  onidleEvent      += Poco::delegate(this, &ofxWebSocketProtocol::_onidle);
+  onmessageEvent   += Poco::delegate(this, &ofxWebSocketProtocol::_onmessage);
+  onbroadcastEvent += Poco::delegate(this, &ofxWebSocketProtocol::_onbroadcast);
 }
 
 //--------------------------------------------------------------
 ofxWebSocketProtocol::~ofxWebSocketProtocol()
 {
-  ofRemoveListener(onconnectEvent,   this, &ofxWebSocketProtocol::_onconnect);
-  ofRemoveListener(onopenEvent,      this, &ofxWebSocketProtocol::_onopen);
-  ofRemoveListener(oncloseEvent,     this, &ofxWebSocketProtocol::_onclose);
-  ofRemoveListener(onidleEvent,      this, &ofxWebSocketProtocol::_onidle);
-  ofRemoveListener(onmessageEvent,   this, &ofxWebSocketProtocol::_onmessage);
-  ofRemoveListener(onbroadcastEvent, this, &ofxWebSocketProtocol::_onbroadcast);
+  onconnectEvent   -= Poco::delegate(this, &ofxWebSocketProtocol::_onconnect);
+  onopenEvent      -= Poco::delegate(this, &ofxWebSocketProtocol::_onopen);
+  oncloseEvent     -= Poco::delegate(this, &ofxWebSocketProtocol::_onclose);
+  onidleEvent      -= Poco::delegate(this, &ofxWebSocketProtocol::_onidle);
+  onmessageEvent   -= Poco::delegate(this, &ofxWebSocketProtocol::_onmessage);
+  onbroadcastEvent -= Poco::delegate(this, &ofxWebSocketProtocol::_onbroadcast);
 }
 
 //--------------------------------------------------------------
