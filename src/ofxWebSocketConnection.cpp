@@ -10,6 +10,7 @@
 
 #include "ofxWebSocket.h"
 #include "ofxWebSocketUtil.h"
+#include <iostream>
 
 //--------------------------------------------------------------
 ofxWebSocketConnection::ofxWebSocketConnection(ofxWebSocketReactor* const _reactor,
@@ -62,7 +63,7 @@ ofxWebSocketConnection::send(const std::string& message)
   }
   
   if (n < 0)
-    std::cout << "ERROR writing to socket" << std::endl;
+    std::cerr << "ERROR writing to socket" << std::endl;
 }
 
 //--------------------------------------------------------------
