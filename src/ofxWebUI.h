@@ -78,7 +78,7 @@ protected:
         broadcast(args.message);
 
         Poco::Timestamp now;
-        lastChangedTimestamp = now.epochMicroseconds() * 1000.0;
+        lastChangedTimestamp = now.epochMicroseconds() / 1000.0;
         
         int fd = libwebsocket_get_socket_fd(args.conn.ws);
 
