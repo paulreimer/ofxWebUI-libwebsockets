@@ -32,7 +32,7 @@ typedef std::map<std::string, std::string> QueryStringArgs;
 typedef std::multimap<std::string, std::string> QueryStringArgsMulti;
 
 //--------------------------------------------------------------
-template<class MapT=QueryStringArgs>
+template<class MapT>
 MapT parseQueryString(const std::string& qs)
 {
   MapT args;

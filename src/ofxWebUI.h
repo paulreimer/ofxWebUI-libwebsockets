@@ -42,7 +42,7 @@ public:
   T* pb;
   T lastChangedDiff;
   
-  unsigned long lastChangedTimestamp;
+  Poco::Timestamp::TimeVal lastChangedTimestamp;
   std::string lastChangedIpAddress;
 
   Poco::FIFOEvent<T> onchange;
@@ -78,7 +78,8 @@ protected:
         broadcast(args.message);
 
         Poco::Timestamp now;
-        lastChangedTimestamp = now.epochMicroseconds() / 1000.0;
+        now.update();
+        lastChangedTimestamp = now.epochMicroseconds();
         
         int fd = libwebsocket_get_socket_fd(args.conn.ws);
 

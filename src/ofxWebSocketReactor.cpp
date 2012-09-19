@@ -95,8 +95,9 @@ ofxWebSocketReactor::setup(const short _port,
   }
   
   if (document_root.empty())
-    document_root = "web";
-  
+    //document_root = "web"; // finicky, used for Poco only so we can't use ofToDataPath here
+    document_root = "../Resources/web";
+
   if (document_root.at(0) != '/')
     document_root = Poco::Path(document_root, Poco::Path::PATH_UNIX).absolute().toString();
 
@@ -233,7 +234,7 @@ ofxWebSocketReactor::_http(struct libwebsocket *ws,
   else
 */
   {
-    Poco::Path root("web");
+    Poco::Path root(document_root);
     std::string ext = url.substr(url.find_last_of(".")+1);
     std::string file = Poco::Path(root, url).toString();
     std::string mimetype = "text/html; charset=utf-8";
